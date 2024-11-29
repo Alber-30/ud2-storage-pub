@@ -7,7 +7,6 @@ use Tests\TestCase;
 
 class HelloWorldControllerTest extends TestCase
 {
-
     public function testIndex()
     {
         Storage::fake('local');

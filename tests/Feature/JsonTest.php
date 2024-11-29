@@ -11,10 +11,10 @@ class JsonTest extends TestCase
     {
         Storage::fake('local');
 
-        Storage::put('app/valid.json', json_encode(['key' => 'value']));
-        Storage::put('app/invalid.txt', 'This is not a JSON file');
+        Storage::put('json/valid.json', json_encode(['key' => 'value']));
+        Storage::put('json/invalid.txt', 'This is not a JSON file');
 
-        $response = $this->get('/api/json');
+        $response = $this->get('/api/json'); // Correcto, la ruta es /api/json
 
         $response->assertStatus(200)
                  ->assertJson([
@@ -37,14 +37,14 @@ class JsonTest extends TestCase
         $response->assertStatus(200)
                  ->assertJson(['mensaje' => 'Fichero guardado exitosamente']);
 
-        Storage::assertExists('app/newfile.json');
+        Storage::assertExists('json/newfile.json');
     }
 
     public function test_store_returns_409_if_file_exists()
     {
         Storage::fake('local');
 
-        Storage::put('app/existingfile.json', json_encode(['key' => 'value']));
+        Storage::put('json/existingfile.json', json_encode(['key' => 'value']));
 
         $data = [
             'filename' => 'existingfile.json',
@@ -76,7 +76,7 @@ class JsonTest extends TestCase
     {
         Storage::fake('local');
 
-        Storage::put('app/existingfile.json', json_encode(['key' => 'value']));
+        Storage::put('json/existingfile.json', json_encode(['key' => 'value']));
 
         $response = $this->get('/api/json/existingfile.json');
 
@@ -101,7 +101,7 @@ class JsonTest extends TestCase
     {
         Storage::fake('local');
 
-        Storage::put('app/existingfile.json', json_encode(['key' => 'value']));
+        Storage::put('json/existingfile.json', json_encode(['key' => 'value']));
 
         $data = [
             'filename' => 'existingfile.json',
@@ -113,8 +113,8 @@ class JsonTest extends TestCase
         $response->assertStatus(200)
                  ->assertJson(['mensaje' => 'Fichero actualizado exitosamente']);
 
-        Storage::assertExists('app/existingfile.json');
-        $this->assertEquals(json_encode(['new_key' => 'new_value']), Storage::get('app/existingfile.json'));
+        Storage::assertExists('json/existingfile.json');
+        $this->assertEquals(json_encode(['new_key' => 'new_value']), Storage::get('json/existingfile.json'));
     }
 
     public function test_update_returns_404_if_file_not_exists()
@@ -122,7 +122,6 @@ class JsonTest extends TestCase
         Storage::fake('local');
 
         $data = [
-            'filename' => 'nonexistentfile.json',
             'content' => json_encode(['key' => 'value'])
         ];
 
@@ -136,10 +135,9 @@ class JsonTest extends TestCase
     {
         Storage::fake('local');
 
-        Storage::put('app/existingfile.json', json_encode(['key' => 'value']));
+        Storage::put('json/existingfile.json', json_encode(['key' => 'value']));
 
         $data = [
-            'filename' => 'existingfile.json',
             'content' => 'This is not a JSON'
         ];
 
@@ -153,14 +151,14 @@ class JsonTest extends TestCase
     {
         Storage::fake('local');
 
-        Storage::put('app/existingfile.json', json_encode(['key' => 'value']));
+        Storage::put('json/existingfile.json', json_encode(['key' => 'value']));
 
         $response = $this->delete('/api/json/existingfile.json');
 
         $response->assertStatus(200)
                  ->assertJson(['mensaje' => 'Fichero eliminado exitosamente']);
 
-        Storage::assertMissing('app/existingfile.json');
+        Storage::assertMissing('json/existingfile.json');
     }
 
     public function test_destroy_returns_404_if_file_not_exists()

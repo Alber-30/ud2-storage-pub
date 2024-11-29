@@ -4,8 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use App\Http\Controllers\Controller;
-
+use Illuminate\Http\JsonResponse;
 
 class HelloWorldController extends Controller
 {
@@ -13,10 +12,6 @@ class HelloWorldController extends Controller
      * Lista todos los ficheros de la carpeta storage/app.
      *
      * @return JsonResponse La respuesta en formato JSON.
-     *
-     * El JSON devuelto debe tener las siguientes claves:
-     * - mensaje: Un mensaje indicando el resultado de la operación.
-     * - contenido: Un array con los nombres de los ficheros.
      */
     public function index()
     {
@@ -27,17 +22,12 @@ class HelloWorldController extends Controller
         ]);
     }
 
-
-     /**
+    /**
      * Recibe por parámetro el nombre de fichero y el contenido. Devuelve un JSON con el resultado de la operación.
      * Si el fichero ya existe, devuelve un 409.
      *
-     * @param filename Parámetro con el nombre del fichero. Devuelve 422 si no hay parámetro.
-     * @param content Contenido del fichero. Devuelve 422 si no hay parámetro.
+     * @param Request $request
      * @return JsonResponse La respuesta en formato JSON.
-     *
-     * El JSON devuelto debe tener las siguientes claves:
-     * - mensaje: Un mensaje indicando el resultado de la operación.
      */
     public function store(Request $request)
     {
@@ -54,16 +44,11 @@ class HelloWorldController extends Controller
         return response()->json(['mensaje' => 'Guardado con éxito'], 200);
     }
 
-
-     /**
+    /**
      * Recibe por parámetro el nombre de fichero y devuelve un JSON con su contenido
      *
-     * @param name Parámetro con el nombre del fichero.
+     * @param string $filename
      * @return JsonResponse La respuesta en formato JSON.
-     *
-     * El JSON devuelto debe tener las siguientes claves:
-     * - mensaje: Un mensaje indicando el resultado de la operación.
-     * - contenido: El contenido del fichero si se ha leído con éxito.
      */
     public function show($filename)
     {
@@ -78,18 +63,14 @@ class HelloWorldController extends Controller
         ]);
     }
 
-
     /**
      * Recibe por parámetro el nombre de fichero, el contenido y actualiza el fichero.
      * Devuelve un JSON con el resultado de la operación.
      * Si el fichero no existe devuelve un 404.
      *
-     * @param filename Parámetro con el nombre del fichero. Devuelve 422 si no hay parámetro.
-     * @param content Contenido del fichero. Devuelve 422 si no hay parámetro.
+     * @param Request $request
+     * @param string $filename
      * @return JsonResponse La respuesta en formato JSON.
-     *
-     * El JSON devuelto debe tener las siguientes claves:
-     * - mensaje: Un mensaje indicando el resultado de la operación.
      */
     public function update(Request $request, $filename)
     {
@@ -103,25 +84,21 @@ class HelloWorldController extends Controller
         return response()->json(['mensaje' => 'Actualizado con éxito'], 200);
     }
 
-
     /**
-     * Recibe por parámetro el nombre de ficher y lo elimina.
+     * Recibe por parámetro el nombre de fichero y lo elimina.
      * Si el fichero no existe devuelve un 404.
      *
-     * @param filename Parámetro con el nombre del fichero. Devuelve 422 si no hay parámetro.
+     * @param string $filename
      * @return JsonResponse La respuesta en formato JSON.
-     *
-     * El JSON devuelto debe tener las siguientes claves:
-     * - mensaje: Un mensaje indicando el resultado de la operación.
      */
     public function destroy($filename)
     {
         if (!Storage::disk('local')->exists($filename)) {
-            return response()->json(['mensaje' => 'El archivo no existe'], 404);  // Not Found
+            return response()->json(['mensaje' => 'El archivo no existe'], 404);
         }
 
         Storage::disk('local')->delete($filename);
+
         return response()->json(['mensaje' => 'Eliminado con éxito'], 200);
     }
-
 }

@@ -8,166 +8,143 @@ use Illuminate\Http\JsonResponse;
 
 class JsonController extends Controller
 {
-     private function isValidJson($string)
-        {
-            json_decode($string);
-            return (json_last_error() == JSON_ERROR_NONE);
-        }
+    // Función que valida si el contenido es un JSON válido.
+    private function isValidJson($string)
+    {
+        json_decode($string);
+        return (json_last_error() == JSON_ERROR_NONE);
+    }
 
     /**
      * Lista todos los ficheros JSON de la carpeta storage/app.
      * Se debe comprobar fichero a fichero si su contenido es un JSON válido.
-     * para ello, se puede usar la función json_decode y json_last_error.
      *
      * @return JsonResponse La respuesta en formato JSON.
-     *
-     * El JSON devuelto debe tener las siguientes claves:
-     * - mensaje: Un mensaje indicando el resultado de la operación.
-     * - contenido: Un array con los nombres de los ficheros.
      */
     public function index()
-        {
-            $files = Storage::files('app');
-            $jsonFiles = [];
+    {
+        $files = Storage::files('json'); // Aseguramos que los archivos estén en una carpeta específica.
+        $jsonFiles = [];
 
-            foreach ($files as $file) {
-                if ($this->isValidJson(Storage::get($file))) {
-                    $jsonFiles[] = basename($file);
-                }
+        // Iteramos para validar los archivos JSON.
+        foreach ($files as $file) {
+            if ($this->isValidJson(Storage::get($file))) {
+                $jsonFiles[] = basename($file); // Guardamos solo los archivos JSON válidos.
             }
-
-            return response()->json([
-                'mensaje' => 'Operación exitosa',
-                'contenido' => $jsonFiles,
-            ]);
         }
 
-   /**
-     * Recibe por parámetro el nombre de fichero y el contenido. Devuelve un JSON con el resultado de la operación.
-     * Si el fichero ya existe, devuelve un 409.
-     * Si el contenido no es un JSON válido, devuelve un 415.
+        return response()->json([
+            'mensaje' => 'Operación exitosa',
+            'contenido' => $jsonFiles,
+        ]);
+    }
+
+    /**
+     * Recibe un nombre de fichero y su contenido, y lo guarda como un nuevo archivo JSON.
      *
-     * @param filename Parámetro con el nombre del fichero. Devuelve 422 si no hay parámetro.
-     * @param content Contenido del fichero. Devuelve 422 si no hay parámetro.
-     * @return JsonResponse La respuesta en formato JSON.
-     *
-     * El JSON devuelto debe tener las siguientes claves:
-     * - mensaje: Un mensaje indicando el resultado de la operación.
+     * @param Request $request
+     * @return JsonResponse
      */
-     public function store(Request $request)
-        {
-            $filename = $request->input('filename');
-            $content = $request->input('content');
+    public function store(Request $request)
+    {
+        $filename = $request->input('filename');
+        $content = $request->input('content');
 
-            if (!$filename || !$content) {
-                return response()->json([
-                    'mensaje' => 'Faltan parámetros',
-                ], 422);
-            }
-
-            if (Storage::exists('app/' . $filename)) {
-                return response()->json([
-                    'mensaje' => 'El fichero ya existe',
-                ], 409);
-            }
-
-            if (!$this->isValidJson($content)) {
-                return response()->json([
-                    'mensaje' => 'Contenido no es un JSON válido',
-                ], 415);
-            }
-
-            Storage::put('app/' . $filename, $content);
-
+        if (!$filename || !$content) {
             return response()->json([
-                'mensaje' => 'Fichero guardado exitosamente',
-            ]);
+                'mensaje' => 'Faltan parámetros',
+            ], 422);
         }
 
- /**
-     * Recibe por parámetro el nombre de fichero y devuelve un JSON con su contenido
+        if (Storage::exists('json/' . $filename)) {
+            return response()->json([
+                'mensaje' => 'El fichero ya existe',
+            ], 409);
+        }
+
+        if (!$this->isValidJson($content)) {
+            return response()->json([
+                'mensaje' => 'Contenido no es un JSON válido',
+            ], 415);
+        }
+
+        Storage::put('json/' . $filename, $content); // Guardamos el archivo en la carpeta 'json'
+
+        return response()->json([
+            'mensaje' => 'Fichero guardado exitosamente',
+        ]);
+    }
+
+    /**
+     * Muestra el contenido de un fichero específico.
      *
-     * @param name Parámetro con el nombre del fichero.
-     * @return JsonResponse La respuesta en formato JSON.
-     *
-     * El JSON devuelto debe tener las siguientes claves:
-     * - mensaje: Un mensaje indicando el resultado de la operación.
-     * - contenido: El contenido del fichero si se ha leído con éxito.
+     * @param string $id
+     * @return JsonResponse
      */
     public function show(string $id)
-        {
-            if (!Storage::exists('app/' . $id)) {
-                return response()->json([
-                    'mensaje' => 'El fichero no existe',
-                ], 404);
-            }
-
-            $content = Storage::get('app/' . $id);
-
+    {
+        if (!Storage::exists('json/' . $id)) {
             return response()->json([
-                'mensaje' => 'Operación exitosa',
-                'contenido' => json_decode($content, true),
-            ]);
+                'mensaje' => 'El fichero no existe',
+            ], 404);
         }
 
-   /**
-     * Recibe por parámetro el nombre de fichero, el contenido y actualiza el fichero.
-     * Devuelve un JSON con el resultado de la operación.
-     * Si el fichero no existe devuelve un 404.
-     * Si el contenido no es un JSON válido, devuelve un 415.
+        $content = Storage::get('json/' . $id);
+
+        return response()->json([
+            'mensaje' => 'Operación exitosa',
+            'contenido' => json_decode($content, true),
+        ]);
+    }
+
+    /**
+     * Actualiza un fichero existente con un nuevo contenido.
      *
-     * @param filename Parámetro con el nombre del fichero. Devuelve 422 si no hay parámetro.
-     * @param content Contenido del fichero. Devuelve 422 si no hay parámetro.
-     * @return JsonResponse La respuesta en formato JSON.
-     *
-     * El JSON devuelto debe tener las siguientes claves:
-     * - mensaje: Un mensaje indicando el resultado de la operación.
+     * @param Request $request
+     * @param string $id
+     * @return JsonResponse
      */
     public function update(Request $request, string $id)
-        {
-            if (!Storage::exists('app/' . $id)) {
-                return response()->json([
-                    'mensaje' => 'El fichero no existe',
-                ], 404);
-            }
-
-            $content = $request->input('content');
-
-            if (!$this->isValidJson($content)) {
-                return response()->json([
-                    'mensaje' => 'Contenido no es un JSON válido',
-                ], 415);
-            }
-
-            Storage::put('app/' . $id, $content);
-
+    {
+        if (!Storage::exists('json/' . $id)) {
             return response()->json([
-                'mensaje' => 'Fichero actualizado exitosamente',
-            ]);
+                'mensaje' => 'El fichero no existe',
+            ], 404);
         }
 
-     /**
-     * Recibe por parámetro el nombre de fichero y lo elimina.
-     * Si el fichero no existe devuelve un 404.
+        $content = $request->input('content');
+
+        if (!$this->isValidJson($content)) {
+            return response()->json([
+                'mensaje' => 'Contenido no es un JSON válido',
+            ], 415);
+        }
+
+        Storage::put('json/' . $id, $content);
+
+        return response()->json([
+            'mensaje' => 'Fichero actualizado exitosamente',
+        ]);
+    }
+
+    /**
+     * Elimina un fichero específico.
      *
-     * @param filename Parámetro con el nombre del fichero. Devuelve 422 si no hay parámetro.
-     * @return JsonResponse La respuesta en formato JSON.
-     *
-     * El JSON devuelto debe tener las siguientes claves:
-     * - mensaje: Un mensaje indicando el resultado de la operación.
+     * @param string $id
+     * @return JsonResponse
      */
-     public function destroy(string $id)
-        {
-            if (!Storage::exists('app/' . $id)) {
-                return response()->json([
-                    'mensaje' => 'El fichero no existe',
-                ], 404);
-            }
-
-            Storage::delete('app/' . $id);
-
+    public function destroy(string $id)
+    {
+        if (!Storage::exists('json/' . $id)) {
             return response()->json([
-                'mensaje' => 'Fichero eliminado exitosamente',
-            ]);
+                'mensaje' => 'El fichero no existe',
+            ], 404);
         }
+
+        Storage::delete('json/' . $id);
+
+        return response()->json([
+            'mensaje' => 'Fichero eliminado exitosamente',
+        ]);
+    }
 }
